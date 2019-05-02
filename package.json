@@ -1,10 +1,13 @@
 {
-  "name": "electron-quick-start",
+  "name": "photobook-electron",
   "version": "1.0.0",
-  "description": "A minimal Electron application",
+  "description": "Electron application",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-packager . Photobook && cp icon.icns Photobook-darwin-x64/Photobook.app/Contents/Resources/electron.icns",
+    "build-win": "electron-packager . Photobook --platform win32 --arch=x64 --out=dist/ --icon=icon.ico --asar --overwrite",
+    "package": "asar pack Photobook-darwin-x64/Photobook.app/Contents/Resources/app Photobook-darwin-x64/Photobook.app/Contents/Resources/app.asar"
   },
   "repository": "https://github.com/electron/electron-quick-start",
   "keywords": [
@@ -15,8 +18,16 @@
     "demo"
   ],
   "author": "GitHub",
-  "license": "CC0-1.0",
+  "license": "",
   "devDependencies": {
-    "electron": "^3.0.7"
+    "asar": "^0.14.6",
+    "electron": "^5.0.0",
+    "electron-packager": "^13.0.1",
+    "electron-windows-installer": "^1.7.8",
+    "electron-winstaller": "^2.7.0",
+    "gulp": "^4.0.0"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.0"
   }
 }

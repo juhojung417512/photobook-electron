@@ -1,50 +1,140 @@
-// Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const {app, BrowserWindow, dialog} = require('electron');
+const fs = require('fs');
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let mainWindow
+let mainWindow;
+
+function handleSquirrelEvent(application) {
+  if (process.argv.length === 1) {
+      return false;
+  }
+
+  const ChildProcess = require('child_process');
+  const path = require('path');
+
+  const appFolder = path.resolve(process.execPath, '..');
+  const rootAtomFolder = path.resolve(appFolder, '..');
+  const updateDotExe = path.resolve(path.join(rootAtomFolder, 'Update.exe'));
+  const exeName = path.basename(process.execPath);
+
+  const spawn = function(command, args) {
+      let spawnedProcess, error;
+
+      try {
+          spawnedProcess = ChildProcess.spawn(command, args, {
+              detached: true
+          });
+      } catch (error) {}
+
+      return spawnedProcess;
+  };
+
+  const spawnUpdate = function(args) {
+      return spawn(updateDotExe, args);
+  };
+
+  const squirrelEvent = process.argv[1];
+  switch (squirrelEvent) {
+      case '--squirrel-install':
+      case '--squirrel-updated':
+          spawnUpdate(['--createShortcut', exeName]);
+
+          setTimeout(application.quit, 1000);
+          return true;
+
+      case '--squirrel-uninstall':
+          spawnUpdate(['--removeShortcut', exeName]);
+
+          setTimeout(application.quit, 1000);
+          return true;
+
+      case '--squirrel-obsolete':
+
+          application.quit();
+          return true;
+  }
+};
+
+var filepath = null;
+var content = null;
+function updateExistingFile(filePath, content){
+
+  fs.writeFile(filepath, content, (err) => {
+      if (err) {
+          alert("An error ocurred updating the file" + err.message);
+          console.log(err);
+          return;
+      }
+
+      alert("The file has been succesfully saved");
+  });
+}
+
+function showSaveDiaglog(content){
+  dialog.showSaveDialog((fileName) => {
+    if (fileName === undefined){
+        console.log("You didn't save the file");
+        return;
+    }
+    // fileName is a string that contains the path and filename created in the save file dialog.  
+    fs.writeFile(fileName, content, (err) => {
+        if(err){
+            alert("An error ocurred creating the file "+ err.message)
+        }
+                    
+        alert("The file has been succesfully saved");
+    });
+  }); 
+}
 
 function createWindow () {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({width: 800, height: 600})
+  mainWindow = new BrowserWindow({width: 1600, height: 900,icon : './icon.ico'})
 
-  // and load the index.html of the app.
-  mainWindow.loadFile('index.html')
-
-  // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
-
-  // Emitted when the window is closed.
+  mainWindow.loadURL('http://13.125.206.253/');
+  mainWindow.webContents.session.on('will-download', (event, item, webContents) => {
+    // Set the save path, making Electron not to prompt a save dialog.
+    console.log("will download",item,webContents)
+    // item.setSavePath(__dirname);
+    item.on('updated', (event, state) => {
+      console.log("item : ",item);
+      if (state === 'interrupted') {
+        console.log('Download is interrupted but can be resumed')
+      } else if (state === 'progressing') {
+        if (item.isPaused()) {
+          console.log('Download is paused')
+        } else {
+          console.log(`Received bytes: ${item.getReceivedBytes()}`)
+        }
+      }
+    })
+    item.once('done', (event, state) => {
+      if (state === 'completed') {
+        showSaveDiaglog(item.getURL());
+        console.log('Download successfully')
+      } else {
+        console.log(`Download failed: ${state}`)
+      }
+    })
+  })
   mainWindow.on('closed', function () {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
     mainWindow = null
   })
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+if(handleSquirrelEvent(app)){
+  return ;
+}
+
 app.on('ready', createWindow)
 
-// Quit when all windows are closed.
 app.on('window-all-closed', function () {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
-    app.quit()
+    app.quit();
   }
 })
 
 app.on('activate', function () {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   if (mainWindow === null) {
-    createWindow()
+    createWindow();
   }
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
