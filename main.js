@@ -88,11 +88,13 @@ function showSaveDiaglog(content){
 
 function createWindow () {
   mainWindow = new BrowserWindow({width: 1600, height: 900,icon : './icon.ico'})
-
-  mainWindow.loadURL('http://13.125.206.253/');
+  
+  mainWindow.loadURL('http://118.218.219.253:3001');
   mainWindow.webContents.session.on('will-download', (event, item, webContents) => {
     // Set the save path, making Electron not to prompt a save dialog.
     console.log("will download",item,webContents)
+    if(filepath !== null)
+      item.setSavePath(filepath);
     // item.setSavePath(__dirname);
     item.on('updated', (event, state) => {
       console.log("item : ",item);
@@ -108,7 +110,9 @@ function createWindow () {
     })
     item.once('done', (event, state) => {
       if (state === 'completed') {
-        showSaveDiaglog(item.getURL());
+        // showSaveDiaglog(item.getURL());
+        filepath = item.getSavePath();
+        console.log('filepath : ',filepath);
         console.log('Download successfully')
       } else {
         console.log(`Download failed: ${state}`)
