@@ -87,7 +87,7 @@ function showSaveDiaglog(content){
 }
 
 function createWindow () {
-  mainWindow = new BrowserWindow({width: 1600, height: 900,icon : './icon.ico'})
+  mainWindow = new BrowserWindow({resizable:false, width: 1400, height: 800,icon : './icon.ico'})
   
   mainWindow.loadURL('http://118.218.219.253:3001');
   mainWindow.webContents.session.on('will-download', (event, item, webContents) => {
@@ -113,6 +113,14 @@ function createWindow () {
         // showSaveDiaglog(item.getURL());
         filepath = item.getSavePath();
         console.log('filepath : ',filepath);
+        const options = {
+          type: 'info',
+          buttons: ['확인'],
+          title: '저장',
+          message: '저장을 완료하였습니다.',
+          // icon : './icon.png'
+        };
+        dialog.showMessageBox(options);
         console.log('Download successfully')
       } else {
         console.log(`Download failed: ${state}`)
